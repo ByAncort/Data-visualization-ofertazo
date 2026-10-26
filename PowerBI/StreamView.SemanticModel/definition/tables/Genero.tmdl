@@ -1,0 +1,37 @@
+table Genero
+	lineageTag: 8b758b3a-7618-4595-b8df-48f754b057c5
+
+	column ContenidoID
+		dataType: string
+		isHidden
+		lineageTag: f4ed4eb4-d06a-4cbb-b884-d7168c73d735
+		summarizeBy: none
+		sourceColumn: ContenidoID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Género
+		dataType: string
+		lineageTag: e6be097c-fca7-4b7c-a97c-0b6399d6d4ca
+		summarizeBy: none
+		sourceColumn: Género
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Genero = m
+		mode: import
+		source =
+				let
+				    // Tabla puente: una fila por contenido y género (el campo original trae varios valores separados por comas)
+				    Base = Table.SelectColumns(Contenido_Base, {"ContenidoID", "Géneros"}),
+				    SinNulos = Table.SelectRows(Base, each [Géneros] <> null),
+				    Listas = Table.TransformColumns(SinNulos, {{"Géneros", each List.Select(List.Transform(Text.Split(_, ","), Text.Trim), each _ <> "")}}),
+				    Expandido = Table.ExpandListColumn(Listas, "Géneros"),
+				    Renombrado = Table.RenameColumns(Expandido, {{"Géneros", "Género"}}),
+				    Distintos = Table.Distinct(Renombrado),
+				    Tipado = Table.TransformColumnTypes(Distintos, {{"ContenidoID", type text}, {"Género", type text}})
+				in
+				    Tipado
+
+	annotation PBI_ResultType = Table
+

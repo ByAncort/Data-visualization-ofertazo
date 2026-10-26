@@ -1,0 +1,24 @@
+relationship 56b7738f-3117-4ab4-961c-6c35bab26303
+	crossFilteringBehavior: bothDirections
+	fromColumn: Genero.ContenidoID
+	toColumn: Contenido.ContenidoID
+
+relationship b84c4f0f-cbbc-4851-a577-badf341654c3
+	crossFilteringBehavior: bothDirections
+	fromColumn: Pais.ContenidoID
+	toColumn: Contenido.ContenidoID
+
+relationship 6417e696-7ba3-4614-8b73-8f11279e5d85
+	crossFilteringBehavior: bothDirections
+	fromColumn: Reparto.ContenidoID
+	toColumn: Contenido.ContenidoID
+
+relationship b1f88f70-71da-4703-b203-5d2c13e6b56d
+	crossFilteringBehavior: bothDirections
+	fromColumn: Direccion.ContenidoID
+	toColumn: Contenido.ContenidoID
+
+relationship 0dc078c1-f34e-465b-8577-2884ddb89905
+	fromColumn: Contenido.'Fecha Incorporación'
+	toColumn: Calendario.Fecha
+

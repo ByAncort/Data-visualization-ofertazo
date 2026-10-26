@@ -1,0 +1,37 @@
+table Direccion
+	lineageTag: ff6773c7-0392-4575-919d-d52bd4e9952b
+
+	column ContenidoID
+		dataType: string
+		isHidden
+		lineageTag: f1457e29-7ed3-4d64-8e40-11a6c8d1e740
+		summarizeBy: none
+		sourceColumn: ContenidoID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Director
+		dataType: string
+		lineageTag: 33b2f92f-b5c8-4e2a-b556-b493e824bb25
+		summarizeBy: none
+		sourceColumn: Director
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Direccion = m
+		mode: import
+		source =
+				let
+				    // Tabla puente: una fila por contenido y director (el campo original trae varios valores separados por comas)
+				    Base = Table.SelectColumns(Contenido_Base, {"ContenidoID", "Director"}),
+				    SinNulos = Table.SelectRows(Base, each [Director] <> null),
+				    Listas = Table.TransformColumns(SinNulos, {{"Director", each List.Select(List.Transform(Text.Split(_, ","), Text.Trim), each _ <> "")}}),
+				    Expandido = Table.ExpandListColumn(Listas, "Director"),
+				    Renombrado = Expandido,
+				    Distintos = Table.Distinct(Renombrado),
+				    Tipado = Table.TransformColumnTypes(Distintos, {{"ContenidoID", type text}, {"Director", type text}})
+				in
+				    Tipado
+
+	annotation PBI_ResultType = Table
+

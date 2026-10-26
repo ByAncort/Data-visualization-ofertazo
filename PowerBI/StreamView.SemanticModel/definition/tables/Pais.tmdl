@@ -1,0 +1,38 @@
+table Pais
+	lineageTag: f88f76a7-1059-4a99-b7fb-0eb4abb4bff8
+
+	column ContenidoID
+		dataType: string
+		isHidden
+		lineageTag: 2422d0c6-6f1d-454a-be7e-366416609627
+		summarizeBy: none
+		sourceColumn: ContenidoID
+
+		annotation SummarizationSetBy = Automatic
+
+	column País
+		dataType: string
+		lineageTag: 8d2e7bd8-55e5-4a37-9a67-3a4aec68bc30
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: País
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Pais = m
+		mode: import
+		source =
+				let
+				    // Tabla puente: una fila por contenido y país (el campo original trae varios valores separados por comas)
+				    Base = Table.SelectColumns(Contenido_Base, {"ContenidoID", "Países"}),
+				    SinNulos = Table.SelectRows(Base, each [Países] <> null),
+				    Listas = Table.TransformColumns(SinNulos, {{"Países", each List.Select(List.Transform(Text.Split(_, ","), Text.Trim), each _ <> "")}}),
+				    Expandido = Table.ExpandListColumn(Listas, "Países"),
+				    Renombrado = Table.RenameColumns(Expandido, {{"Países", "País"}}),
+				    Distintos = Table.Distinct(Renombrado),
+				    Tipado = Table.TransformColumnTypes(Distintos, {{"ContenidoID", type text}, {"País", type text}})
+				in
+				    Tipado
+
+	annotation PBI_ResultType = Table
+

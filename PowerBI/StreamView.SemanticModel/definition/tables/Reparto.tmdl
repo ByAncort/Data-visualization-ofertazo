@@ -1,0 +1,37 @@
+table Reparto
+	lineageTag: 8ae1b329-fc2e-49b0-a60b-bb17b328d273
+
+	column ContenidoID
+		dataType: string
+		isHidden
+		lineageTag: 6aa8425b-420f-444a-84de-2d49d7db9eb4
+		summarizeBy: none
+		sourceColumn: ContenidoID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Actor
+		dataType: string
+		lineageTag: ee319d75-479d-4e61-8f62-39ec8fe34397
+		summarizeBy: none
+		sourceColumn: Actor
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Reparto = m
+		mode: import
+		source =
+				let
+				    // Tabla puente: una fila por contenido y actor (el campo original trae varios valores separados por comas)
+				    Base = Table.SelectColumns(Contenido_Base, {"ContenidoID", "Reparto"}),
+				    SinNulos = Table.SelectRows(Base, each [Reparto] <> null),
+				    Listas = Table.TransformColumns(SinNulos, {{"Reparto", each List.Select(List.Transform(Text.Split(_, ","), Text.Trim), each _ <> "")}}),
+				    Expandido = Table.ExpandListColumn(Listas, "Reparto"),
+				    Renombrado = Table.RenameColumns(Expandido, {{"Reparto", "Actor"}}),
+				    Distintos = Table.Distinct(Renombrado),
+				    Tipado = Table.TransformColumnTypes(Distintos, {{"ContenidoID", type text}, {"Actor", type text}})
+				in
+				    Tipado
+
+	annotation PBI_ResultType = Table
+

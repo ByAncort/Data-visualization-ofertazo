@@ -1,0 +1,25 @@
+model Model
+	culture: es-CL
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-CL
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["RutaDatos", "Peliculas_Origen", "Series_Origen", "Contenido_Base", "Contenido", "Genero", "Pais", "Reparto", "Direccion", "Calendario", "Medidas"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Contenido
+ref table Genero
+ref table Pais
+ref table Reparto
+ref table Direccion
+ref table Calendario
+ref table Medidas
+
+ref cultureInfo es-CL
+

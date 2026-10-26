@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "StreamView"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "54a87755-34d5-44cf-9ede-0ae7f93bf575"
+  }
+}

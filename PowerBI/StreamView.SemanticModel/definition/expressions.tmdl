@@ -1,0 +1,156 @@
+expression RutaDatos = "C:\Users\user\Desktop\DUOC UC\Visualización de Datos (ADY1104)\EV2\Datos\" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: d273334e-4043-466a-9ca2-124ca1752752
+
+	annotation PBI_ResultType = Text
+
+expression Peliculas_Origen =
+		let
+		    // Fuente oficial: CSV entregado por StreamView (no se modifica el archivo original)
+		    Fuente = Csv.Document(File.Contents(RutaDatos & "netflix_movies_detailed_up_to_2025.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+		    Encabezados = Table.PromoteHeaders(Fuente, [PromoteAllScalars = true]),
+		    TextoVacioANulo = Table.ReplaceValue(Encabezados, "", null, Replacer.ReplaceValue, Table.ColumnNames(Encabezados)),
+		    Tipos = Table.TransformColumnTypes(TextoVacioANulo, {{"show_id", Int64.Type}, {"type", type text}, {"title", type text}, {"director", type text}, {"cast", type text}, {"country", type text}, {"date_added", type date}, {"release_year", Int64.Type}, {"rating", type number}, {"duration", type text}, {"genres", type text}, {"language", type text}, {"description", type text}, {"popularity", type number}, {"vote_count", Int64.Type}, {"vote_average", type number}, {"budget", type number}, {"revenue", type number}}, "en-US")
+		in
+		    Tipos
+	lineageTag: ee8839e3-352a-4d93-a921-b627c586e2f7
+
+	annotation PBI_ResultType = Table
+
+expression Series_Origen =
+		let
+		    Fuente = Csv.Document(File.Contents(RutaDatos & "netflix_tv_shows_detailed_up_to_2025.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+		    Encabezados = Table.PromoteHeaders(Fuente, [PromoteAllScalars = true]),
+		    TextoVacioANulo = Table.ReplaceValue(Encabezados, "", null, Replacer.ReplaceValue, Table.ColumnNames(Encabezados)),
+		    Tipos = Table.TransformColumnTypes(TextoVacioANulo, {{"show_id", Int64.Type}, {"type", type text}, {"title", type text}, {"director", type text}, {"cast", type text}, {"country", type text}, {"date_added", type date}, {"release_year", Int64.Type}, {"rating", type number}, {"duration", type text}, {"genres", type text}, {"language", type text}, {"description", type text}, {"popularity", type number}, {"vote_count", Int64.Type}, {"vote_average", type number}}, "en-US")
+		in
+		    Tipos
+	lineageTag: be0ac0fd-2228-4818-85f7-9a351fd4fd38
+
+	annotation PBI_ResultType = Table
+
+expression Contenido_Base =
+		let
+		    // 1) Diccionarios de traducción al español: géneros TMDB, países e idiomas ISO 639-1 ("Unknown" se trata como dato faltante)
+		    MapaGeneros = [
+		        #"Action" = "Acción", #"Adventure" = "Aventura", #"Animation" = "Animación", #"Comedy" = "Comedia",
+		        #"Crime" = "Crimen", #"Documentary" = "Documental", #"Drama" = "Drama", #"Family" = "Familiar",
+		        #"Fantasy" = "Fantasía", #"History" = "Historia", #"Horror" = "Terror", #"Music" = "Música",
+		        #"Mystery" = "Misterio", #"Romance" = "Romance", #"Science Fiction" = "Ciencia ficción", #"TV Movie" = "Película para TV",
+		        #"Thriller" = "Suspenso", #"War" = "Bélica", #"Western" = "Western", #"Action & Adventure" = "Acción y aventura",
+		        #"Sci-Fi & Fantasy" = "Ciencia ficción y fantasía", #"Reality" = "Reality", #"Kids" = "Infantil", #"Talk" = "Talk show",
+		        #"Soap" = "Telenovela", #"War & Politics" = "Guerra y política", #"News" = "Noticias", #"Unknown" = null
+		    ],
+		    MapaPaises = [
+		        #"Afghanistan" = "Afganistán", #"Albania" = "Albania", #"Algeria" = "Argelia", #"Angola" = "Angola",
+		        #"Argentina" = "Argentina", #"Armenia" = "Armenia", #"Aruba" = "Aruba", #"Australia" = "Australia",
+		        #"Austria" = "Austria", #"Azerbaijan" = "Azerbaiyán", #"Bahamas" = "Bahamas", #"Bangladesh" = "Bangladés",
+		        #"Belarus" = "Bielorrusia", #"Belgium" = "Bélgica", #"Bhutan" = "Bután", #"Bolivia" = "Bolivia",
+		        #"Bosnia and Herzegovina" = "Bosnia y Herzegovina", #"Botswana" = "Botsuana", #"Brazil" = "Brasil", #"Brunei Darussalam" = "Brunéi",
+		        #"Bulgaria" = "Bulgaria", #"Cambodia" = "Camboya", #"Cameroon" = "Camerún", #"Canada" = "Canadá",
+		        #"Cayman Islands" = "Islas Caimán", #"Central African Republic" = "República Centroafricana", #"Chile" = "Chile", #"China" = "China",
+		        #"Colombia" = "Colombia", #"Congo" = "Congo", #"Cote D'Ivoire" = "Costa de Marfil", #"Croatia" = "Croacia",
+		        #"Cuba" = "Cuba", #"Cyprus" = "Chipre", #"Czech Republic" = "República Checa", #"Denmark" = "Dinamarca",
+		        #"Dominican Republic" = "República Dominicana", #"Ecuador" = "Ecuador", #"Egypt" = "Egipto", #"Estonia" = "Estonia",
+		        #"Ethiopia" = "Etiopía", #"Faeroe Islands" = "Islas Feroe", #"Fiji" = "Fiyi", #"Finland" = "Finlandia",
+		        #"France" = "Francia", #"French Polynesia" = "Polinesia Francesa", #"Georgia" = "Georgia", #"Germany" = "Alemania",
+		        #"Ghana" = "Ghana", #"Greece" = "Grecia", #"Greenland" = "Groenlandia", #"Guadaloupe" = "Guadalupe",
+		        #"Guatemala" = "Guatemala", #"Hong Kong" = "Hong Kong", #"Hungary" = "Hungría", #"Iceland" = "Islandia",
+		        #"India" = "India", #"Indonesia" = "Indonesia", #"Iran" = "Irán", #"Iraq" = "Irak",
+		        #"Ireland" = "Irlanda", #"Israel" = "Israel", #"Italy" = "Italia", #"Japan" = "Japón",
+		        #"Jordan" = "Jordania", #"Kazakhstan" = "Kazajistán", #"Kenya" = "Kenia", #"Kosovo" = "Kosovo",
+		        #"Kuwait" = "Kuwait", #"Kyrgyz Republic" = "Kirguistán", #"Lao People's Democratic Republic" = "Laos", #"Latvia" = "Letonia",
+		        #"Lebanon" = "Líbano", #"Liechtenstein" = "Liechtenstein", #"Lithuania" = "Lituania", #"Luxembourg" = "Luxemburgo",
+		        #"Macao" = "Macao", #"Macedonia" = "Macedonia del Norte", #"Malawi" = "Malaui", #"Malaysia" = "Malasia",
+		        #"Malta" = "Malta", #"Mauritania" = "Mauritania", #"Mauritius" = "Mauricio", #"Mexico" = "México",
+		        #"Monaco" = "Mónaco", #"Mongolia" = "Mongolia", #"Montenegro" = "Montenegro", #"Morocco" = "Marruecos",
+		        #"Myanmar" = "Myanmar", #"Namibia" = "Namibia", #"Nepal" = "Nepal", #"Netherlands" = "Países Bajos",
+		        #"Netherlands Antilles" = "Antillas Neerlandesas", #"New Caledonia" = "Nueva Caledonia", #"New Zealand" = "Nueva Zelanda", #"Nicaragua" = "Nicaragua",
+		        #"Nigeria" = "Nigeria", #"Norway" = "Noruega", #"Pakistan" = "Pakistán", #"Palau" = "Palaos",
+		        #"Palestinian Territory" = "Palestina", #"Panama" = "Panamá", #"Paraguay" = "Paraguay", #"Peru" = "Perú",
+		        #"Philippines" = "Filipinas", #"Poland" = "Polonia", #"Portugal" = "Portugal", #"Puerto Rico" = "Puerto Rico",
+		        #"Qatar" = "Catar", #"Romania" = "Rumania", #"Russia" = "Rusia", #"Rwanda" = "Ruanda",
+		        #"Saudi Arabia" = "Arabia Saudita", #"Senegal" = "Senegal", #"Serbia" = "Serbia", #"Singapore" = "Singapur",
+		        #"Slovakia" = "Eslovaquia", #"Slovenia" = "Eslovenia", #"Solomon Islands" = "Islas Salomón", #"South Africa" = "Sudáfrica",
+		        #"South Korea" = "Corea del Sur", #"Spain" = "España", #"Sri Lanka" = "Sri Lanka", #"St. Kitts and Nevis" = "San Cristóbal y Nieves",
+		        #"St. Lucia" = "Santa Lucía", #"St. Pierre and Miquelon" = "San Pedro y Miquelón", #"Sweden" = "Suecia", #"Switzerland" = "Suiza",
+		        #"Syrian Arab Republic" = "Siria", #"Taiwan" = "Taiwán", #"Tanzania" = "Tanzania", #"Thailand" = "Tailandia",
+		        #"Tunisia" = "Túnez", #"Turkey" = "Turquía", #"US Virgin Islands" = "Islas Vírgenes (EE. UU.)", #"Uganda" = "Uganda",
+		        #"Ukraine" = "Ucrania", #"United Arab Emirates" = "Emiratos Árabes Unidos", #"United Kingdom" = "Reino Unido", #"United States Minor Outlying Islands" = "Islas Ultramarinas de EE. UU.",
+		        #"United States of America" = "Estados Unidos", #"Uruguay" = "Uruguay", #"Uzbekistan" = "Uzbekistán", #"Vanuatu" = "Vanuatu",
+		        #"Venezuela" = "Venezuela", #"Vietnam" = "Vietnam", #"Zambia" = "Zambia"
+		    ],
+		    MapaIdiomas = [
+		        #"af" = "Afrikáans", #"am" = "Amárico", #"ar" = "Árabe", #"as" = "Asamés",
+		        #"az" = "Azerí", #"bg" = "Búlgaro", #"bn" = "Bengalí", #"bs" = "Bosnio",
+		        #"ca" = "Catalán", #"cn" = "Cantonés", #"cs" = "Checo", #"cy" = "Galés",
+		        #"da" = "Danés", #"de" = "Alemán", #"dz" = "Dzongkha", #"el" = "Griego",
+		        #"en" = "Inglés", #"es" = "Español", #"et" = "Estonio", #"eu" = "Euskera",
+		        #"fa" = "Persa", #"fi" = "Finés", #"fr" = "Francés", #"ga" = "Irlandés",
+		        #"gl" = "Gallego", #"he" = "Hebreo", #"hi" = "Hindi", #"hr" = "Croata",
+		        #"ht" = "Criollo haitiano", #"hu" = "Húngaro", #"hy" = "Armenio", #"id" = "Indonesio",
+		        #"is" = "Islandés", #"it" = "Italiano", #"ja" = "Japonés", #"ka" = "Georgiano",
+		        #"kk" = "Kazajo", #"kl" = "Groenlandés", #"km" = "Jemer", #"kn" = "Canarés",
+		        #"ko" = "Coreano", #"ku" = "Kurdo", #"ky" = "Kirguís", #"la" = "Latín",
+		        #"lb" = "Luxemburgués", #"lt" = "Lituano", #"lv" = "Letón", #"mi" = "Maorí",
+		        #"mk" = "Macedonio", #"ml" = "Malayalam", #"mn" = "Mongol", #"mr" = "Maratí",
+		        #"ms" = "Malayo", #"mt" = "Maltés", #"nb" = "Noruego (bokmål)", #"ne" = "Nepalí",
+		        #"nl" = "Neerlandés", #"no" = "Noruego", #"or" = "Oriya", #"pa" = "Panyabí",
+		        #"pl" = "Polaco", #"ps" = "Pastún", #"pt" = "Portugués", #"ro" = "Rumano",
+		        #"ru" = "Ruso", #"si" = "Cingalés", #"sk" = "Eslovaco", #"sl" = "Esloveno",
+		        #"sr" = "Serbio", #"sv" = "Sueco", #"ta" = "Tamil", #"te" = "Telugu",
+		        #"th" = "Tailandés", #"tl" = "Tagalo", #"tr" = "Turco", #"uk" = "Ucraniano",
+		        #"ur" = "Urdu", #"vi" = "Vietnamita", #"xx" = "Sin idioma", #"yo" = "Yoruba",
+		        #"za" = "Zhuang", #"zh" = "Chino (mandarín)", #"zu" = "Zulú"
+		    ],
+		    // Traduce una lista de valores separados por comas; los valores sin traducción se mantienen
+		    TraducirLista = (txt as nullable text, mapa as record) as nullable text =>
+		        if txt = null then null
+		        else
+		            let
+		                Lista = List.Select(
+		                    List.Transform(Text.Split(txt, ","), each Record.FieldOrDefault(mapa, Text.Trim(_), Text.Trim(_))),
+		                    each _ <> null and _ <> ""),
+		                Resultado = if List.IsEmpty(Lista) then null else Text.Combine(Lista, ", ")
+		            in
+		                Resultado,
+		    // 2) Películas: se descartan rating (es idéntica a vote_average en el 100% de los registros) y duration (100% vacía)
+		    Peliculas = Table.AddColumn(
+		        Table.SelectColumns(Peliculas_Origen, {"show_id", "title", "director", "cast", "country", "date_added", "release_year", "genres", "language", "description", "popularity", "vote_count", "vote_average", "budget", "revenue"}),
+		        "Tipo", each "Película", type text),
+		    // 3) Series: se eliminan los show_id duplicados (9 casos, se conserva la primera fila); duration siempre dice "1 Seasons" y se descarta
+		    SeriesSinDuplicados = Table.Distinct(Series_Origen, {"show_id"}),
+		    Series0 = Table.SelectColumns(SeriesSinDuplicados, {"show_id", "title", "director", "cast", "country", "date_added", "release_year", "genres", "language", "description", "popularity", "vote_count", "vote_average"}),
+		    Series1 = Table.AddColumn(Series0, "budget", each null, type nullable number),
+		    Series2 = Table.AddColumn(Series1, "revenue", each null, type nullable number),
+		    Series = Table.AddColumn(Series2, "Tipo", each "Serie", type text),
+		    // 4) Integración de películas y series en una sola tabla de contenidos
+		    Unidos = Table.Combine({Peliculas, Series}),
+		    Recortados = Table.TransformColumns(Unidos, {{"title", Text.Trim, type text}, {"director", Text.Trim, type text}, {"cast", Text.Trim, type text}, {"country", Text.Trim, type text}, {"genres", Text.Trim, type text}, {"language", Text.Trim, type text}}),
+		    AnioMaximo = List.Max(Recortados[release_year]),
+		    ConID = Table.AddColumn(Recortados, "ContenidoID", each (if [Tipo] = "Película" then "P-" else "S-") & Text.From([show_id]), type text),
+		    ConTituloAnio = Table.AddColumn(ConID, "Título (Año)", each [title] & " (" & Text.From([release_year]) & ")", type text),
+		    ConGeneros = Table.AddColumn(ConTituloAnio, "Géneros", each TraducirLista([genres], MapaGeneros), type nullable text),
+		    ConGeneroPrincipal = Table.AddColumn(ConGeneros, "Género Principal", each if [Géneros] = null then "Sin información" else Text.Split([Géneros], ", "){0}, type text),
+		    ConPaises = Table.AddColumn(ConGeneroPrincipal, "Países", each TraducirLista([country], MapaPaises), type nullable text),
+		    ConPaisPrincipal = Table.AddColumn(ConPaises, "País Principal", each if [Países] = null then "Sin información" else Text.Split([Países], ", "){0}, type text),
+		    ConIdioma = Table.AddColumn(ConPaisPrincipal, "Idioma", each if [language] = null then "Sin información" else Record.FieldOrDefault(MapaIdiomas, [language], Text.Upper([language])), type text),
+		    // 5) Valoración: vote_average = 0 con 0 votos significa "sin evaluar", no una nota 0
+		    ConCalificacion = Table.AddColumn(ConIdioma, "Calificación", each if [vote_count] > 0 then [vote_average] else null, type nullable number),
+		    ConConfiable = Table.AddColumn(ConCalificacion, "Evaluación Confiable", each if [vote_count] >= 100 then "Sí" else "No", type text),
+		    ConReciente = Table.AddColumn(ConConfiable, "Estreno Reciente", each if [release_year] >= AnioMaximo - 2 then "Sí" else "No", type text),
+		    // 6) Finanzas (solo películas): 0 = dato faltante; se exige presupuesto e ingresos >= US$10.000 para excluir valores atípicos (ej. presupuesto de US$1)
+		    ConPresupuesto = Table.AddColumn(ConReciente, "Presupuesto", each if [budget] <> null and [budget] > 0 then [budget] else null, type nullable number),
+		    ConIngresos = Table.AddColumn(ConPresupuesto, "Ingresos", each if [revenue] <> null and [revenue] > 0 then [revenue] else null, type nullable number),
+		    ConMarca = Table.AddColumn(ConIngresos, "Con Datos Financieros", each [Tipo] = "Película" and [Presupuesto] <> null and [Ingresos] <> null and [Presupuesto] >= 10000 and [Ingresos] >= 10000, type logical),
+		    ConROI = Table.AddColumn(ConMarca, "ROI", each if [Con Datos Financieros] then [Ingresos] / [Presupuesto] else null, type nullable number),
+		    ConGanancia = Table.AddColumn(ConROI, "Ganancia", each if [Con Datos Financieros] then [Ingresos] - [Presupuesto] else null, type nullable number),
+		    // 7) Nombres en español y tipos finales
+		    Renombrado = Table.RenameColumns(ConGanancia, {{"show_id", "ID Origen"}, {"title", "Título"}, {"director", "Director"}, {"cast", "Reparto"}, {"date_added", "Fecha Incorporación"}, {"release_year", "Año Estreno"}, {"language", "Código Idioma"}, {"description", "Descripción"}, {"popularity", "Popularidad"}, {"vote_count", "Votos"}}),
+		    Final = Table.SelectColumns(Renombrado, {"ContenidoID", "ID Origen", "Tipo", "Título", "Título (Año)", "Director", "Reparto", "Países", "País Principal", "Fecha Incorporación", "Año Estreno", "Géneros", "Género Principal", "Código Idioma", "Idioma", "Descripción", "Popularidad", "Votos", "Calificación", "Evaluación Confiable", "Estreno Reciente", "Presupuesto", "Ingresos", "Con Datos Financieros", "ROI", "Ganancia"}),
+		    Tipado = Table.TransformColumnTypes(Final, {{"ID Origen", Int64.Type}, {"Fecha Incorporación", type date}, {"Año Estreno", Int64.Type}, {"Popularidad", type number}, {"Votos", Int64.Type}, {"Calificación", type number}, {"Presupuesto", type number}, {"Ingresos", type number}, {"Con Datos Financieros", type logical}, {"ROI", type number}, {"Ganancia", type number}})
+		in
+		    Tipado
+	lineageTag: 6bcecf93-eb5e-4ad0-b222-39eac151fb17
+
+	annotation PBI_ResultType = Table
+

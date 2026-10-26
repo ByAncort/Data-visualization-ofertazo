@@ -1,0 +1,567 @@
+table Medidas
+	lineageTag: fee863fa-e26f-4844-8ec8-9ca0adb173de
+
+	/// Cantidad de títulos (películas + series) en el contexto de filtros.
+	measure 'Total Contenidos' = COUNTROWS ( Contenido )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 8cc0cae9-9faf-4cf6-a4c4-5a31a9c2de88
+
+	/// Cantidad de películas.
+	measure 'Total Películas' = COALESCE ( CALCULATE ( [Total Contenidos], KEEPFILTERS ( Contenido[Tipo] = "Película" ) ), 0 )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 5cca2fb0-8ad4-44da-a1ba-edcbfe65b87f
+
+	/// Cantidad de series.
+	measure 'Total Series' = COALESCE ( CALCULATE ( [Total Contenidos], KEEPFILTERS ( Contenido[Tipo] = "Serie" ) ), 0 )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 962e9d9b-7495-494e-8d14-ed8d1c746c54
+
+	/// Participación de las películas en el catálogo filtrado.
+	measure '% Películas' = DIVIDE ( [Total Películas], [Total Contenidos] )
+		formatString: 0.0%
+		displayFolder: 1. Catálogo
+		lineageTag: 25ecc131-abfb-4224-bbe5-205ee79194e7
+
+	/// Países productores distintos (un título puede tener varios países).
+	measure 'Países Representados' = DISTINCTCOUNT ( Pais[País] )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 8df63f88-58b7-4f98-9ea5-0ae80a7f482a
+
+	/// Idiomas originales distintos (excluye el código xx = sin idioma).
+	measure 'Idiomas Disponibles' = CALCULATE ( DISTINCTCOUNT ( Contenido[Idioma] ), Contenido[Idioma] <> "Sin idioma" )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 2959731b-0e1c-42c0-a315-da150c232dfc
+
+	/// Géneros distintos presentes en el catálogo filtrado.
+	measure 'Géneros Distintos' = DISTINCTCOUNT ( Genero[Género] )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 5df0c2a7-7371-470b-904e-3237b4e09c39
+
+	/// Cantidad de títulos asociados a un director.
+	measure 'Títulos Dirigidos' = COUNTROWS ( Direccion )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: bcffdf35-ef6f-46ed-90a3-40c7106bc25c
+
+	/// Cantidad de títulos en los que aparece un actor dentro del reparto principal.
+	measure Apariciones = COUNTROWS ( Reparto )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 5790563d-6da6-452a-9f3c-5f9e93911c94
+
+	/// Total acumulado de títulos incorporados hasta la fecha del contexto (evolución del catálogo).
+	measure 'Contenidos Acumulados' =
+			VAR FechaMax = MAX ( Calendario[Fecha] )
+			RETURN
+			    CALCULATE ( [Total Contenidos], REMOVEFILTERS ( Calendario ), Calendario[Fecha] <= FechaMax )
+		formatString: #,0
+		displayFolder: 1. Catálogo
+		lineageTag: 45e3fdc4-d498-423c-a4ef-de6b205c8006
+
+	/// Promedio del índice de popularidad TMDB (índice relativo, no son reproducciones).
+	measure 'Popularidad Promedio' = AVERAGE ( Contenido[Popularidad] )
+		formatString: #,0.0
+		displayFolder: 2. Popularidad
+		lineageTag: 4a13ed03-a674-402a-98c7-f7fd19fd373d
+
+	/// Mediana del índice de popularidad: más robusta que el promedio porque la popularidad tiene valores extremos.
+	measure 'Popularidad Mediana' = MEDIAN ( Contenido[Popularidad] )
+		formatString: #,0.0
+		displayFolder: 2. Popularidad
+		lineageTag: 20e5216a-d470-4d90-9427-accd5c5d0a63
+
+	/// Popularidad de los títulos candidatos a campañas: estrenos de los últimos 3 años, con al menos 100 votos y calificación >= 7.
+	measure 'Popularidad Candidatos Promoción' =
+			CALCULATE (
+			    [Popularidad Promedio],
+			    KEEPFILTERS ( Contenido[Estreno Reciente] = "Sí" ),
+			    KEEPFILTERS ( Contenido[Evaluación Confiable] = "Sí" ),
+			    KEEPFILTERS ( Contenido[Calificación] >= 7 )
+			)
+		formatString: #,0.0
+		displayFolder: 2. Popularidad
+		lineageTag: 2a6a83dc-89db-422d-9e20-ea6d287dbfbf
+
+	/// Promedio de vote_average (escala 0-10) considerando solo títulos con al menos un voto.
+	measure 'Calificación Promedio' = AVERAGE ( Contenido[Calificación] )
+		formatString: 0.00
+		displayFolder: 3. Valoración
+		lineageTag: eaba5888-4e52-4c97-8bfb-039fa165bf01
+
+	/// Calificación promedio ponderada por cantidad de votos (da más peso a títulos más evaluados).
+	measure 'Calificación Ponderada' =
+			DIVIDE (
+			    SUMX ( Contenido, Contenido[Calificación] * Contenido[Votos] ),
+			    SUM ( Contenido[Votos] )
+			)
+		formatString: 0.00
+		displayFolder: 3. Valoración
+		lineageTag: 115f45db-afac-4251-aaa9-e7d862fc8809
+
+	/// Calificación promedio solo de títulos con 100 o más votos (usada en rankings de mejor evaluados).
+	measure 'Calificación Confiable' = CALCULATE ( [Calificación Promedio], KEEPFILTERS ( Contenido[Evaluación Confiable] = "Sí" ) )
+		formatString: 0.00
+		displayFolder: 3. Valoración
+		lineageTag: c650dcfe-5260-462b-a048-9a438a5afc0f
+
+	/// Cantidad total de evaluaciones recibidas.
+	measure 'Total Votos' = SUM ( Contenido[Votos] )
+		formatString: #,0
+		displayFolder: 3. Valoración
+		lineageTag: e7c75b09-c1e5-4c65-86f7-a13b44fa1a1b
+
+	/// Porcentaje de títulos con 100 o más votos.
+	measure '% Evaluación Confiable' = DIVIDE ( CALCULATE ( [Total Contenidos], Contenido[Evaluación Confiable] = "Sí" ), [Total Contenidos] )
+		formatString: 0.0%
+		displayFolder: 3. Valoración
+		lineageTag: a031431b-ad10-4a82-a3d8-179a392fb6ee
+
+	/// Películas con presupuesto e ingresos informados (ambos >= US$10.000).
+	measure 'Películas con Datos Financieros' = CALCULATE ( [Total Contenidos], Contenido[Con Datos Financieros] = TRUE () )
+		formatString: #,0
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: f65efff0-7ddd-42f9-bc6d-5ba5226a4adb
+
+	/// Porcentaje de películas que tienen datos financieros válidos.
+	measure 'Cobertura Financiera' = DIVIDE ( [Películas con Datos Financieros], [Total Películas] )
+		formatString: 0.0%
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: ca55a751-4fbd-44f0-b0ab-e83c1e404da4
+
+	/// Suma del presupuesto (US$) de películas con datos financieros válidos.
+	measure 'Presupuesto Total' = CALCULATE ( SUM ( Contenido[Presupuesto] ), Contenido[Con Datos Financieros] = TRUE () )
+		formatString: \$#,0
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: a7c2b114-9001-429c-9e76-3ac83305ad20
+
+	/// Suma de ingresos (US$) de películas con datos financieros válidos.
+	measure 'Ingresos Totales' = CALCULATE ( SUM ( Contenido[Ingresos] ), Contenido[Con Datos Financieros] = TRUE () )
+		formatString: \$#,0
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: 614f2736-9a8a-44dc-a642-a9e3e40ad2e3
+
+	/// Presupuesto promedio por película.
+	measure 'Presupuesto Promedio' = DIVIDE ( [Presupuesto Total], [Películas con Datos Financieros] )
+		formatString: \$#,0
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: aae9f68e-9014-41dd-b77d-1125ac10370e
+
+	/// Ingresos menos presupuesto.
+	measure 'Ganancia Total' = [Ingresos Totales] - [Presupuesto Total]
+		formatString: \$#,0
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: 177d04c1-a8d3-45c2-b302-78c6b5321c21
+
+	/// ROI aproximado = Ingresos / Presupuesto (definición del caso). 2,0x significa que recaudó el doble de lo invertido.
+	measure ROI = DIVIDE ( [Ingresos Totales], [Presupuesto Total] )
+		formatString: #,0.0"x"
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: 00eba23b-b82d-42e9-b4e4-38a77fbe8813
+
+	/// Mediana del ROI por película: resume el retorno típico sin que unos pocos éxitos extremos lo distorsionen.
+	measure 'ROI Mediano' = CALCULATE ( MEDIAN ( Contenido[ROI] ), Contenido[Con Datos Financieros] = TRUE () )
+		formatString: #,0.0"x"
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: 49a06b5a-64a3-400a-8792-9552ad020cdd
+
+	/// Porcentaje de películas cuyos ingresos superan su presupuesto (ROI > 1).
+	measure '% Películas Rentables' =
+			DIVIDE (
+			    CALCULATE ( [Total Contenidos], Contenido[Con Datos Financieros] = TRUE (), Contenido[ROI] > 1 ),
+			    [Películas con Datos Financieros]
+			)
+		formatString: 0.0%
+		displayFolder: 4. Finanzas (películas)
+		lineageTag: b1347b81-3f55-41dc-8dbf-548ff1181c45
+
+	/// Texto dinámico que indica período y alcance del análisis según los filtros aplicados (regla de negocio).
+	measure 'Texto Alcance' =
+			VAR AnioMin = MIN ( Contenido[Año Estreno] )
+			VAR AnioMax = MAX ( Contenido[Año Estreno] )
+			RETURN
+			    "Alcance: " & SUBSTITUTE ( FORMAT ( [Total Contenidos], "#,0" ), ",", "." ) & " títulos (" & SUBSTITUTE ( FORMAT ( [Total Películas], "#,0" ), ",", "." ) & " películas y "
+			        & SUBSTITUTE ( FORMAT ( [Total Series], "#,0" ), ",", "." ) & " series) · Período de estreno " & AnioMin & "–" & AnioMax
+			        & " · Fuente: catálogo StreamView enriquecido con TMDB (corte 2025)"
+		displayFolder: 5. Textos
+		lineageTag: c8e9f90d-5487-42ce-8d05-c1d1140e4f39
+
+	/// Texto dinámico que indica el alcance de los indicadores financieros.
+	measure 'Texto Alcance Financiero' =
+			VAR AnioMin = MIN ( Contenido[Año Estreno] )
+			VAR AnioMax = MAX ( Contenido[Año Estreno] )
+			RETURN
+			    "Alcance financiero: " & SUBSTITUTE ( FORMAT ( [Películas con Datos Financieros], "#,0" ), ",", "." ) & " de " & SUBSTITUTE ( FORMAT ( [Total Películas], "#,0" ), ",", "." )
+			        & " películas (" & FORMAT ( [Cobertura Financiera], "0%" ) & ") tienen presupuesto e ingresos >= US$10.000 · Estrenos "
+			        & AnioMin & "–" & AnioMax & " · Las series no tienen datos financieros"
+		displayFolder: 5. Textos
+		lineageTag: f32032a5-85ad-4fef-a786-ba0bdb9a7928
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Géneros' =
+			VAR Tabla = ADDCOLUMNS ( VALUES ( Genero[Género] ), "@n", [Total Contenidos] )
+			VAR Top1 = TOPN ( 1, Tabla, [@n], DESC )
+			VAR Nombre = CONCATENATEX ( Top1, Genero[Género], " y " )
+			VAR Pct = DIVIDE ( MAXX ( Top1, [@n] ), CALCULATE ( [Total Contenidos], CROSSFILTER ( Genero[ContenidoID], Contenido[ContenidoID], OneWay ) ) )
+			RETURN
+			    IF (
+			        ISBLANK ( [Total Contenidos] ),
+			        "Top 10 géneros por cantidad de títulos",
+			        Nombre & " lidera el catálogo: está presente en el " & FORMAT ( Pct, "0%" ) & " de los títulos"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 5e26997c-96d3-467a-911b-3814ba5e7567
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Países' =
+			VAR Tabla = ADDCOLUMNS ( VALUES ( Pais[País] ), "@n", [Total Contenidos] )
+			VAR T1 = TOPN ( 1, Tabla, [@n], DESC )
+			VAR P1 = CONCATENATEX ( T1, Pais[País], " y " )
+			VAR N1 = MAXX ( T1, [@n] )
+			VAR T2 = TOPN ( 1, FILTER ( Tabla, [@n] < N1 ), [@n], DESC )
+			VAR P2 = CONCATENATEX ( T2, Pais[País], " y " )
+			VAR N2 = MAXX ( T2, [@n] )
+			VAR Base = P1 & " participa en el " & FORMAT ( DIVIDE ( N1, CALCULATE ( [Total Contenidos], CROSSFILTER ( Pais[ContenidoID], Contenido[ContenidoID], OneWay ) ) ), "0%" ) & " de los títulos"
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( N1 ), "Top 10 países productores",
+			        ISBLANK ( N2 ), Base,
+			        Base & ", " & SUBSTITUTE ( FORMAT ( DIVIDE ( N1, N2 ), "0.0" ), ".", "," ) & " veces el volumen de " & P2
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: ce07f1cd-d930-4c48-82ef-5fbb7a7b69f5
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Evolución' =
+			VAR Anios = ADDCOLUMNS ( FILTER ( VALUES ( Calendario[Año] ), [Total Contenidos] > 0 ), "@n", [Total Contenidos] )
+			VAR NAnios = COUNTROWS ( Anios )
+			VAR Media = AVERAGEX ( Anios, [@n] )
+			VAR CV = DIVIDE ( STDEVX.P ( Anios, [@n] ), Media )
+			RETURN
+			    IF (
+			        ISBLANK ( Media ),
+			        "Evolución acumulada del catálogo",
+			        IF ( CV < 0.1, "Crecimiento lineal y estable: ~", "Crecimiento irregular: en promedio ~" )
+			            & SUBSTITUTE ( FORMAT ( IF ( Media >= 1000, ROUND ( Media, -2 ), IF ( Media >= 100, ROUND ( Media, -1 ), ROUND ( Media, 0 ) ) ), "#,0" ), ",", "." ) & " títulos nuevos por año"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 6be68481-a17e-42e5-ab18-ec0a2daa8e38
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Composición' =
+			VAR PctPel = DIVIDE ( [Total Películas], [Total Contenidos] )
+			VAR GenTop = CONCATENATEX ( TOPN ( 1, ADDCOLUMNS ( VALUES ( Genero[Género] ), "@n", [Total Contenidos] ), [@n], DESC ), Genero[Género], " y " )
+			VAR Balance =
+			    SWITCH (
+			        TRUE (),
+			        PctPel >= 0.45 && PctPel <= 0.55, "Catálogo equilibrado (" & FORMAT ( PctPel, "0%" ) & " películas, " & FORMAT ( 1 - PctPel, "0%" ) & " series)",
+			        PctPel > 0.55, "Predominan las películas (" & FORMAT ( PctPel, "0%" ) & " del catálogo)",
+			        "Predominan las series (" & FORMAT ( 1 - PctPel, "0%" ) & " del catálogo)"
+			    )
+			RETURN
+			    IF (
+			        ISBLANK ( [Total Contenidos] ),
+			        "Composición del catálogo por tipo y género",
+			        Balance & "; " & GenTop & " es el género dominante"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 5ad12d70-7f00-4861-95ac-d89869edca6f
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Incorporaciones' =
+			VAR Anios = ADDCOLUMNS ( FILTER ( VALUES ( Calendario[Año] ), [Total Contenidos] > 0 ), "@n", [Total Contenidos] )
+			VAR NAnios = COUNTROWS ( Anios )
+			VAR Media = AVERAGEX ( Anios, [@n] )
+			VAR CV = DIVIDE ( STDEVX.P ( Anios, [@n] ), Media )
+			VAR Pel = DIVIDE ( [Total Películas], NAnios )
+			VAR Ser = DIVIDE ( [Total Series], NAnios )
+			RETURN
+			    IF (
+			        ISBLANK ( Media ),
+			        "Títulos incorporados por año",
+			        IF ( CV < 0.1, "Volumen anual constante: ~", "Volumen anual variable: en promedio ~" )
+			            & SUBSTITUTE ( FORMAT ( IF ( Pel >= 1000, ROUND ( Pel, -2 ), IF ( Pel >= 100, ROUND ( Pel, -1 ), ROUND ( Pel, 0 ) ) ), "#,0" ), ",", "." ) & " películas y ~" & SUBSTITUTE ( FORMAT ( IF ( Ser >= 1000, ROUND ( Ser, -2 ), IF ( Ser >= 100, ROUND ( Ser, -1 ), ROUND ( Ser, 0 ) ) ), "#,0" ), ",", "." ) & " series por año"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: b4bdb8a8-6294-42c1-b1a7-9928ca7b8f5d
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Idiomas' =
+			VAR T = ADDCOLUMNS ( VALUES ( Contenido[Idioma] ), "@n", [Total Contenidos] )
+			VAR T1 = TOPN ( 1, T, [@n], DESC )
+			VAR I1 = LOWER ( CONCATENATEX ( T1, Contenido[Idioma], " y " ) )
+			VAR N1 = MAXX ( T1, [@n] )
+			VAR R1 = FILTER ( T, [@n] < N1 )
+			VAR T2 = TOPN ( 1, R1, [@n], DESC )
+			VAR I2 = LOWER ( CONCATENATEX ( T2, Contenido[Idioma], " y " ) )
+			VAR N2 = MAXX ( T2, [@n] )
+			VAR I3 = LOWER ( CONCATENATEX ( TOPN ( 1, FILTER ( R1, [@n] < N2 ), [@n], DESC ), Contenido[Idioma], " y " ) )
+			VAR Base = "El " & I1 & " concentra el " & FORMAT ( DIVIDE ( N1, CALCULATE ( [Total Contenidos], REMOVEFILTERS ( Contenido[Idioma] ) ) ), "0%" ) & " de los títulos"
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( N1 ), "Top 10 idiomas originales",
+			        ISBLANK ( N2 ), Base,
+			        I3 = "", Base & ", seguido del " & I2,
+			        Base & ", seguido del " & I2 & " y el " & I3
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: ab9e5cc2-56b3-41c4-90dc-5c88dddffff6
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Directores' =
+			VAR T = ADDCOLUMNS ( VALUES ( Direccion[Director] ), "@n", [Títulos Dirigidos] )
+			VAR N1 = MAXX ( T, [@n] )
+			VAR Total = COUNTROWS ( CALCULATETABLE ( VALUES ( Direccion[Director] ), REMOVEFILTERS ( Direccion[Director] ) ) )
+			VAR Cuota = DIVIDE ( N1, CALCULATE ( [Total Contenidos], REMOVEFILTERS ( Direccion[Director] ) ) )
+			RETURN
+			    IF (
+			        ISBLANK ( N1 ),
+			        "Top 10 directores con más títulos",
+			        IF ( Cuota < 0.01, "Dirección muy atomizada: entre ", "Dirección concentrada: entre " )
+			            & SUBSTITUTE ( FORMAT ( Total, "#,0" ), ",", "." ) & " directores, el máximo es de " & SUBSTITUTE ( FORMAT ( N1, "#,0" ), ",", "." ) & " títulos"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 6d86a32d-4076-4435-bcf8-981ec08bb2fe
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Actores' =
+			VAR T = ADDCOLUMNS ( VALUES ( Reparto[Actor] ), "@n", [Apariciones] )
+			VAR T1 = TOPN ( 1, T, [@n], DESC )
+			VAR A1 = CONCATENATEX ( T1, Reparto[Actor], " y " )
+			VAR N1 = MAXX ( T1, [@n] )
+			VAR T2 = TOPN ( 1, FILTER ( T, [@n] < N1 ), [@n], DESC )
+			VAR A2 = IF ( COUNTROWS ( T2 ) = 1, CONCATENATEX ( T2, Reparto[Actor] ), "el siguiente" )
+			VAR N2 = MAXX ( T2, [@n] )
+			VAR Base = A1 & " lidera con " & SUBSTITUTE ( FORMAT ( N1, "#,0" ), ",", "." ) & " apariciones"
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( N1 ), "Top 10 actores con más apariciones",
+			        ISBLANK ( N2 ), Base,
+			        Base & ", " & FORMAT ( DIVIDE ( N1, N2 ) - 1, "0%" ) & " más que " & A2
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 599e05c4-ec7f-40b7-8148-8b5d395cea6a
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Populares' =
+			VAR T = ADDCOLUMNS ( VALUES ( Contenido[Título (Año)] ), "@p", [Popularidad Promedio] )
+			VAR P1 = MAXX ( T, [@p] )
+			VAR Veces = DIVIDE ( P1, CALCULATE ( [Popularidad Mediana], REMOVEFILTERS ( Contenido[Título (Año)] ) ) )
+			RETURN
+			    IF (
+			        ISBLANK ( Veces ),
+			        "Top 10 contenidos más populares",
+			        IF ( Veces >= 20, "Popularidad muy concentrada: el n.º 1 multiplica por ", "El título más popular multiplica por " )
+			            & SUBSTITUTE ( FORMAT ( Veces, "#,0" ), ",", "." ) & " la mediana del catálogo"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 7dbe2fc5-952c-46e1-b556-7dbe8eab615e
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Mejor Evaluados' =
+			CALCULATE (
+			VAR Evaluados = CALCULATE ( [Total Contenidos], KEEPFILTERS ( Contenido[Evaluación Confiable] = "Sí" ) )
+			VAR Excelentes = COALESCE ( COUNTROWS ( FILTER ( Contenido, Contenido[Evaluación Confiable] = "Sí" && Contenido[Calificación] >= 8.5 ) ), 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( Evaluados ),
+			        "Top 10 contenidos mejor evaluados",
+			        IF ( DIVIDE ( Excelentes, Evaluados ) < 0.05, "Excelencia escasa: solo ", "" )
+			            & SUBSTITUTE ( FORMAT ( Excelentes, "#,0" ), ",", "." ) & " de " & SUBSTITUTE ( FORMAT ( Evaluados, "#,0" ), ",", "." ) & " títulos evaluados (≥100 votos) superan 8,5"
+			    ),
+			    REMOVEFILTERS ( Contenido[Título (Año)] )
+			)
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: e1d1635c-6467-4dd2-a2d8-c65b5b49f110
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Popularidad por Tipo' =
+			VAR PS = CALCULATE ( [Popularidad Mediana], KEEPFILTERS ( Contenido[Tipo] = "Serie" ) )
+			VAR PP = CALCULATE ( [Popularidad Mediana], KEEPFILTERS ( Contenido[Tipo] = "Película" ) )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( PS ) || ISBLANK ( PP ), "Popularidad mediana por género y tipo",
+			        PS >= PP, "Series: " & SUBSTITUTE ( FORMAT ( DIVIDE ( PS, PP ), "0.0" ), ".", "," ) & " veces la popularidad mediana del cine",
+			        "Cine: " & SUBSTITUTE ( FORMAT ( DIVIDE ( PP, PS ), "0.0" ), ".", "," ) & " veces la popularidad mediana de las series"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: c178f5eb-7920-4d12-a332-ac2caba352df
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Popularidad vs Calificación' =
+			VAR T = FILTER ( Contenido, Contenido[Evaluación Confiable] = "Sí" && NOT ISBLANK ( Contenido[Calificación] ) )
+			VAR MX = AVERAGEX ( T, Contenido[Calificación] )
+			VAR MY = AVERAGEX ( T, LN ( Contenido[Popularidad] ) )
+			VAR Cov = SUMX ( T, ( Contenido[Calificación] - MX ) * ( LN ( Contenido[Popularidad] ) - MY ) )
+			VAR SX = SQRT ( SUMX ( T, ( Contenido[Calificación] - MX ) ^ 2 ) )
+			VAR SY = SQRT ( SUMX ( T, ( LN ( Contenido[Popularidad] ) - MY ) ^ 2 ) )
+			VAR R = DIVIDE ( Cov, SX * SY )
+			VAR Fuerza = SWITCH ( TRUE (), ABS ( R ) < 0.3, "débil", ABS ( R ) < 0.7, "moderada", "fuerte" )
+			RETURN
+			    IF (
+			        ISBLANK ( R ) || COUNTROWS ( T ) < 3,
+			        "¿Se relacionan popularidad y calificación?",
+			        "Nota y popularidad: relación " & Fuerza & " (r = " & SUBSTITUTE ( FORMAT ( R, "0.00" ), ".", "," ) & ")"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 451d689a-6e1a-4c27-b600-07a4d66fd52b
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Presupuesto vs Ingresos' =
+			VAR T = FILTER ( Contenido, Contenido[Con Datos Financieros] = TRUE () )
+			VAR MX = AVERAGEX ( T, LN ( MAX ( Contenido[Presupuesto], 1 ) ) )
+			VAR MY = AVERAGEX ( T, LN ( MAX ( Contenido[Ingresos], 1 ) ) )
+			VAR Cov = SUMX ( T, ( LN ( MAX ( Contenido[Presupuesto], 1 ) ) - MX ) * ( LN ( MAX ( Contenido[Ingresos], 1 ) ) - MY ) )
+			VAR SX = SQRT ( SUMX ( T, ( LN ( MAX ( Contenido[Presupuesto], 1 ) ) - MX ) ^ 2 ) )
+			VAR SY = SQRT ( SUMX ( T, ( LN ( MAX ( Contenido[Ingresos], 1 ) ) - MY ) ^ 2 ) )
+			VAR R = DIVIDE ( Cov, SX * SY )
+			VAR Fuerza = SWITCH ( TRUE (), ABS ( R ) < 0.3, "débil", ABS ( R ) < 0.7, "moderada", "fuerte" )
+			RETURN
+			    IF (
+			        ISBLANK ( R ) || COUNTROWS ( T ) < 3,
+			        "¿Se relacionan presupuesto e ingresos?",
+			        "Presupuesto e ingresos: relación " & Fuerza & " (r = " & SUBSTITUTE ( FORMAT ( R, "0.00" ), ".", "," ) & ")" & IF ( R >= 0.3, "; más inversión suele traer más ingresos", "; el presupuesto no anticipa los ingresos" )
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 339e1f27-5277-4a8f-a34a-3b21ef7edd5e
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Top Ingresos' =
+			CALCULATE (
+			VAR T = FILTER ( ADDCOLUMNS ( VALUES ( Contenido[Título (Año)] ), "@i", [Ingresos Totales] ), NOT ISBLANK ( [@i] ) )
+			VAR Top10 = TOPN ( 10, T, [@i], DESC )
+			VAR NTop = COUNTROWS ( Top10 )
+			VAR Cuota = DIVIDE ( SUMX ( Top10, [@i] ), [Ingresos Totales] )
+			VAR Peso = DIVIDE ( NTop, [Películas con Datos Financieros] )
+			RETURN
+			    IF (
+			        ISBLANK ( Cuota ),
+			        "Top 10 películas por ingresos",
+			        SUBSTITUTE ( FORMAT ( NTop, "#,0" ), ",", "." ) & " superproducciones (" & SUBSTITUTE ( FORMAT ( Peso, "0.0%" ), ".", "," ) & " de las películas) generan el "
+			            & FORMAT ( Cuota, "0%" ) & " de los ingresos"
+			    ),
+			    REMOVEFILTERS ( Contenido[Título (Año)] )
+			)
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: bf3c38cb-4651-4437-8314-2b69cef60a54
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Top ROI' =
+			CALCULATE (
+			VAR T = FILTER ( ADDCOLUMNS ( VALUES ( Contenido[Título (Año)] ), "@r", [ROI], "@b", [Presupuesto Total] ), NOT ISBLANK ( [@r] ) )
+			VAR Top10 = TOPN ( 10, T, [@r], DESC )
+			VAR MedTop = MEDIANX ( Top10, [@b] )
+			VAR MedTotal = CALCULATE ( MEDIAN ( Contenido[Presupuesto] ), Contenido[Con Datos Financieros] = TRUE () )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( MedTop ), "Top 10 películas por ROI",
+			        MedTop < MedTotal, "Los mayores ROI vienen de presupuestos bajos: mediana de US$" & IF ( MedTop < 1000000, SUBSTITUTE ( FORMAT ( MedTop / 1000, "#,0" ), ",", "." ) & " mil", SUBSTITUTE ( FORMAT ( MedTop / 1000000, "0.0" ), ".", "," ) & " M" )
+			            & " vs US$" & IF ( MedTotal < 1000000, SUBSTITUTE ( FORMAT ( MedTotal / 1000, "#,0" ), ",", "." ) & " mil", SUBSTITUTE ( FORMAT ( MedTotal / 1000000, "0.0" ), ".", "," ) & " M" ) & " del total",
+			        "Los mayores ROI no dependen de un presupuesto bajo: mediana de US$" & IF ( MedTop < 1000000, SUBSTITUTE ( FORMAT ( MedTop / 1000, "#,0" ), ",", "." ) & " mil", SUBSTITUTE ( FORMAT ( MedTop / 1000000, "0.0" ), ".", "," ) & " M" )
+			    ),
+			    REMOVEFILTERS ( Contenido[Título (Año)] )
+			)
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 90a0efcd-7add-48d9-8187-615e71cca059
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Mapa Oportunidades' =
+			VAR CalRef = [Calificación Promedio]
+			VAR PopRef = [Popularidad Mediana]
+			VAR T = ADDCOLUMNS ( VALUES ( Genero[Género] ), "@c", [Calificación Promedio], "@p", [Popularidad Mediana] )
+			VAR Q = FILTER ( T, [@c] > CalRef && [@p] > PopRef )
+			VAR NQ = COUNTROWS ( Q )
+			VAR Destacados = CONCATENATEX ( TOPN ( 2, Q, [@p], DESC ), Genero[Género], " y ", [@p], DESC )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( CalRef ) || COALESCE ( NQ, 0 ) = 0, "Mapa de oportunidades por género",
+			        NQ = 1, Destacados & " es el único género sobre la media en popularidad y calificación",
+			        SUBSTITUTE ( FORMAT ( NQ, "#,0" ), ",", "." ) & " géneros superan la media en popularidad y nota; destacan " & Destacados
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 5979a7b3-d247-4a98-b445-159a189bcf33
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Mercados' =
+			VAR T8 = TOPN ( 8, ADDCOLUMNS ( VALUES ( Pais[País] ), "@n", [Total Contenidos] ), [@n], DESC )
+			VAR TP = ADDCOLUMNS ( T8, "@p", [Popularidad Mediana] )
+			VAR Lider = TOPN ( 1, TP, [@p], DESC )
+			VAR PL = CONCATENATEX ( Lider, Pais[País], " y " )
+			VAR VL = MAXX ( Lider, [@p] )
+			VAR Mayor = TOPN ( 1, TP, [@n], DESC )
+			VAR PV = CONCATENATEX ( Mayor, Pais[País], " y " )
+			VAR VV = MAXX ( Mayor, [@p] )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( VL ), "Mercados con mayor potencial",
+			        PL = PV, PL & " lidera en volumen y en popularidad mediana (" & SUBSTITUTE ( FORMAT ( VL, "0.0" ), ".", "," ) & ")",
+			        PL & " lidera en popularidad mediana (" & SUBSTITUTE ( FORMAT ( VL, "0.0" ), ".", "," ) & "), " & SUBSTITUTE ( FORMAT ( DIVIDE ( VL, VV ), "0.0" ), ".", "," )
+			            & " veces la de " & PV & ", el mayor productor"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 863a1ac7-d08e-408c-8c12-c24c9b9371e7
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título ROI por Género' =
+			VAR T = FILTER ( ADDCOLUMNS ( VALUES ( Genero[Género] ), "@r", [ROI Mediano] ), NOT ISBLANK ( [@r] ) )
+			VAR T1 = TOPN ( 1, T, [@r], DESC )
+			VAR G1 = CONCATENATEX ( T1, Genero[Género], " y " )
+			VAR R1 = MAXX ( T1, [@r] )
+			RETURN
+			    IF (
+			        ISBLANK ( R1 ),
+			        "Géneros más rentables (películas)",
+			        G1 & " es el género más rentable: ROI mediano de " & SUBSTITUTE ( FORMAT ( R1, "0.0" ), ".", "," ) & "x frente a "
+			            & SUBSTITUTE ( FORMAT ( CALCULATE ( [ROI Mediano], CROSSFILTER ( Genero[ContenidoID], Contenido[ContenidoID], OneWay ) ), "0.0" ), ".", "," ) & "x del total"
+			    )
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: a791c3c6-24bc-4bec-8bdd-8a5c2a9540b1
+
+	/// Titular dinámico con el hallazgo clave del gráfico; se recalcula con los filtros aplicados.
+	measure 'Título Recomendados' =
+			CALCULATE (
+			VAR N = COALESCE ( COUNTROWS ( FILTER ( Contenido, Contenido[Estreno Reciente] = "Sí" && Contenido[Evaluación Confiable] = "Sí" && Contenido[Calificación] >= 7 ) ), 0 )
+			VAR T = FILTER ( ADDCOLUMNS ( VALUES ( Contenido[Título (Año)] ), "@p", [Popularidad Candidatos Promoción] ), NOT ISBLANK ( [@p] ) )
+			VAR Lider = CONCATENATEX ( TOPN ( 1, T, [@p], DESC ), Contenido[Título (Año)], " y " )
+			RETURN
+			    IF (
+			        N = 0,
+			        "Contenidos recomendados para campañas promocionales",
+			        SUBSTITUTE ( FORMAT ( N, "#,0" ), ",", "." ) & " títulos recientes cumplen los criterios de campaña; " & Lider & " encabeza la lista por popularidad"
+			    ),
+			    REMOVEFILTERS ( Contenido[Título (Año)] )
+			)
+		displayFolder: 6. Títulos dinámicos
+		lineageTag: 82f6e084-38bd-4210-8294-20277021b957
+
+	column 'Columna Oculta'
+		dataType: string
+		isHidden
+		lineageTag: 8b3bc9c7-5c78-4fd8-8a18-b43aa1c9f389
+		summarizeBy: none
+		sourceColumn: Columna Oculta
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Medidas = m
+		mode: import
+		source =
+				let
+				    Fuente = #table(type table [#"Columna Oculta" = text], {})
+				in
+				    Fuente
+
+	annotation PBI_ResultType = Table
+

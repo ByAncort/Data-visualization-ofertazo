@@ -1,0 +1,235 @@
+table Contenido
+	lineageTag: bec85c54-0467-45a4-9ba7-7bb0ff16efc4
+
+	column ContenidoID
+		dataType: string
+		lineageTag: 9cfae6f1-f38b-4f1b-82a1-5bda68edcd1c
+		summarizeBy: none
+		sourceColumn: ContenidoID
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ID Origen'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 89fa8d51-d607-4a01-b8ad-d421e081ccd6
+		summarizeBy: none
+		sourceColumn: ID Origen
+
+		annotation SummarizationSetBy = Automatic
+
+	column Tipo
+		dataType: string
+		lineageTag: 3ccbe436-49d6-4ed6-9839-5144786f3472
+		summarizeBy: none
+		sourceColumn: Tipo
+
+		annotation SummarizationSetBy = Automatic
+
+	column Título
+		dataType: string
+		lineageTag: b29bfaa5-561c-45e1-8543-4e8b8e5f7e4e
+		summarizeBy: none
+		sourceColumn: Título
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Título (Año)'
+		dataType: string
+		lineageTag: 4e7ca9a3-90f5-4461-8bdd-fa0aef91ae5c
+		summarizeBy: none
+		sourceColumn: Título (Año)
+
+		annotation SummarizationSetBy = Automatic
+
+	column Director
+		dataType: string
+		lineageTag: 1562c938-6c17-4c39-a20f-64b70c5c3ebb
+		summarizeBy: none
+		sourceColumn: Director
+
+		annotation SummarizationSetBy = Automatic
+
+	column Reparto
+		dataType: string
+		lineageTag: 81f51162-bc86-4c3e-a079-a0fafc350611
+		summarizeBy: none
+		sourceColumn: Reparto
+
+		annotation SummarizationSetBy = Automatic
+
+	column Países
+		dataType: string
+		lineageTag: 88223af3-aa25-4c99-9abf-03e47d940288
+		summarizeBy: none
+		sourceColumn: Países
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'País Principal'
+		dataType: string
+		lineageTag: 2f0ff440-3609-48e1-b013-c6f6ead63946
+		summarizeBy: none
+		sourceColumn: País Principal
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Fecha Incorporación'
+		dataType: dateTime
+		formatString: dd/MM/yyyy
+		lineageTag: 168472dd-c0b9-4dbc-a27d-a5046110aa83
+		summarizeBy: none
+		sourceColumn: Fecha Incorporación
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Año Estreno'
+		dataType: int64
+		formatString: 0
+		lineageTag: 3c3dfdf5-e2e2-4a24-b9e5-ccbbeb6a1aaf
+		summarizeBy: none
+		sourceColumn: Año Estreno
+
+		annotation SummarizationSetBy = Automatic
+
+	column Géneros
+		dataType: string
+		lineageTag: f8772b49-f8b8-4887-b5e3-af9ead0b63e7
+		summarizeBy: none
+		sourceColumn: Géneros
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Género Principal'
+		dataType: string
+		lineageTag: 3d133464-d4ad-44ba-b0ad-e2dd6f8074a8
+		summarizeBy: none
+		sourceColumn: Género Principal
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Código Idioma'
+		dataType: string
+		isHidden
+		lineageTag: 9a2f5744-1d7e-4997-a932-1b19d74064b8
+		summarizeBy: none
+		sourceColumn: Código Idioma
+
+		annotation SummarizationSetBy = Automatic
+
+	column Idioma
+		dataType: string
+		lineageTag: 5d5ac754-6948-4b95-90ab-635d1fe75fb8
+		summarizeBy: none
+		sourceColumn: Idioma
+
+		annotation SummarizationSetBy = Automatic
+
+	column Descripción
+		dataType: string
+		lineageTag: 890a653a-304e-4b09-b6b2-9ad994273317
+		summarizeBy: none
+		sourceColumn: Descripción
+
+		annotation SummarizationSetBy = Automatic
+
+	column Popularidad
+		dataType: double
+		formatString: #,0.0
+		lineageTag: e5630a40-3232-4774-8502-75987ddbb782
+		summarizeBy: none
+		sourceColumn: Popularidad
+
+		annotation SummarizationSetBy = Automatic
+
+	column Votos
+		dataType: int64
+		formatString: #,0
+		lineageTag: 3a3c75a1-28c0-4ebe-aa5e-0ce975a06bce
+		summarizeBy: none
+		sourceColumn: Votos
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calificación
+		dataType: double
+		formatString: 0.0
+		lineageTag: 40396d5b-68ac-4677-bfb4-728e33d0aa48
+		summarizeBy: none
+		sourceColumn: Calificación
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Evaluación Confiable'
+		dataType: string
+		lineageTag: 8181451f-9c53-4203-9ea1-64ff369a8307
+		summarizeBy: none
+		sourceColumn: Evaluación Confiable
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Estreno Reciente'
+		dataType: string
+		lineageTag: 80766c8b-ffa8-440c-829b-0bd8381c9380
+		summarizeBy: none
+		sourceColumn: Estreno Reciente
+
+		annotation SummarizationSetBy = Automatic
+
+	column Presupuesto
+		dataType: double
+		formatString: \$#,0
+		lineageTag: 14ff7d62-9294-4355-bf20-4440a5fc4def
+		summarizeBy: none
+		sourceColumn: Presupuesto
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ingresos
+		dataType: double
+		formatString: \$#,0
+		lineageTag: b61b71b8-f99e-4c01-a89a-2189bfce21ef
+		summarizeBy: none
+		sourceColumn: Ingresos
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Con Datos Financieros'
+		dataType: boolean
+		lineageTag: 20652370-f2f7-40f2-8fe1-40f515176a3c
+		summarizeBy: none
+		sourceColumn: Con Datos Financieros
+
+		annotation SummarizationSetBy = Automatic
+
+	column ROI
+		dataType: double
+		formatString: #,0.0"x"
+		lineageTag: f015edf7-467f-446d-afb7-ed22d99677ae
+		summarizeBy: none
+		sourceColumn: ROI
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ganancia
+		dataType: double
+		formatString: \$#,0
+		lineageTag: 85048d7a-d869-4b70-9fa4-5346caff3418
+		summarizeBy: none
+		sourceColumn: Ganancia
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Contenido = m
+		mode: import
+		source =
+				let
+				    Fuente = Contenido_Base
+				in
+				    Fuente
+
+	annotation PBI_ResultType = Table
+

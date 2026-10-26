@@ -1,0 +1,113 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 857.60925352603044,
+            "y": 216.87075078574293
+          },
+          "nodeIndex": "Medidas",
+          "nodeLineageTag": "ba177174-eab7-4c26-8b09-5929726ba7dd",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 336.524258268543,
+            "y": -50
+          },
+          "nodeIndex": "Calendario",
+          "nodeLineageTag": "4d4b5a43-8ff5-423d-ab5a-f33127a6e10a",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 336.54530783761157,
+            "y": 202.90322087035918
+          },
+          "nodeIndex": "Contenido",
+          "nodeLineageTag": "6ecd1220-0eb8-4dc5-bf15-ca0dc2e0bae1",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 143.60542282496993,
+            "y": 555.74150157148586
+          },
+          "nodeIndex": "Direccion",
+          "nodeLineageTag": "479973ef-5f7a-4404-9978-05a50fd0a33f",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 576.77246297448994,
+            "y": 555.71301052781712
+          },
+          "nodeIndex": "Genero",
+          "nodeLineageTag": "06dd932e-0f9f-4acd-9800-6b785b318d84",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 623.60925352603044,
+            "y": 161.20582429701869
+          },
+          "nodeIndex": "Pais",
+          "nodeLineageTag": "dfc5d57d-37c8-4a46-b55a-2882831ca1cb",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 203.18034474539149
+          },
+          "nodeIndex": "Reparto",
+          "nodeLineageTag": "a5029cdb-b855-4d26-a965-dce986f63560",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas las tablas",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Todas las tablas",
+  "defaultDiagram": "Todas las tablas"
+}
